@@ -1,10 +1,6 @@
 # linux specific compile definitions
 
-if(FREEBSD)
-    add_compile_definitions(SUNSHINE_PLATFORM="freebsd")
-else()
-    add_compile_definitions(SUNSHINE_PLATFORM="linux")
-endif()
+add_compile_definitions(SUNSHINE_PLATFORM="linux")
 
 # AppImage
 if(${SUNSHINE_BUILD_APPIMAGE})
@@ -227,9 +223,6 @@ endif()
 # These need to be set before adding the inputtino subdirectory in order for them to be picked up
 set(LIBEVDEV_CUSTOM_INCLUDE_DIR "${EVDEV_INCLUDE_DIR}")
 set(LIBEVDEV_CUSTOM_LIBRARY "${EVDEV_LIBRARY}")
-if(FREEBSD)
-    set(USE_UHID OFF)
-endif()
 
 add_subdirectory("${CMAKE_SOURCE_DIR}/third-party/inputtino")
 list(APPEND SUNSHINE_EXTERNAL_LIBRARIES inputtino::libinputtino)

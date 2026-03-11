@@ -8,9 +8,6 @@ if(NOT DEFINED FFMPEG_PREPARED_BINARIES)
     # Set platform-specific libraries
     if(WIN32)
         set(FFMPEG_PLATFORM_LIBRARIES mfplat ole32 strmiids mfuuid vpl)
-    elseif(FREEBSD)
-        # numa is not available on FreeBSD
-        set(FFMPEG_PLATFORM_LIBRARIES va va-drm va-x11 X11)
     elseif(UNIX AND NOT APPLE)
         set(FFMPEG_PLATFORM_LIBRARIES numa va va-drm va-x11 X11)
     endif()
@@ -131,8 +128,6 @@ else()
     # Set platform-specific libraries
     if(WIN32)
         set(FFMPEG_PLATFORM_LIBRARIES mfplat ole32 strmiids mfuuid vpl)
-    elseif(FREEBSD)
-        set(FFMPEG_PLATFORM_LIBRARIES va va-drm va-x11 X11)
     elseif(UNIX AND NOT APPLE)
         set(FFMPEG_PLATFORM_LIBRARIES numa va va-drm va-x11 X11)
     endif()

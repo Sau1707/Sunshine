@@ -232,7 +232,7 @@ namespace video {
   extern encoder_t mediafoundation;
 #endif
 
-#if defined(__linux__) || defined(linux) || defined(__linux) || defined(__FreeBSD__)
+#if defined(__linux__) || defined(linux) || defined(__linux)
   extern encoder_t vaapi;
 #endif
 

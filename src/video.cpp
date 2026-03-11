@@ -955,7 +955,7 @@ namespace video {
     H264_ONLY | PARALLEL_ENCODING | ALWAYS_REPROBE | YUV444_SUPPORT
   };
 
-#if defined(__linux__) || defined(linux) || defined(__linux) || defined(__FreeBSD__)
+#if defined(__linux__) || defined(linux) || defined(__linux)
   encoder_t vaapi {
     "vaapi"sv,
     std::make_unique<encoder_platform_formats_avcodec>(
@@ -1091,7 +1091,7 @@ namespace video {
     &amdvce,
     &mediafoundation,
 #endif
-#if defined(__linux__) || defined(linux) || defined(__linux) || defined(__FreeBSD__)
+#if defined(__linux__) || defined(linux) || defined(__linux)
     &vaapi,
 #endif
 #ifdef __APPLE__
