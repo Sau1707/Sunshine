@@ -5,19 +5,18 @@ cmake_minimum_required(VERSION 3.20)
 # todo - set this conditionally
 
 project(Sunshine VERSION 0.0.0
-        DESCRIPTION "Self-hosted game stream host for Moonlight"
+        DESCRIPTION "Self-hosted remote desktop stream host for Moonlight"
         HOMEPAGE_URL "https://app.lizardbyte.dev/Sunshine")
 
 set(PROJECT_LICENSE "GPL-3.0-only")
 
 set(PROJECT_FQDN "dev.lizardbyte.app.Sunshine")
 
-set(PROJECT_BRIEF_DESCRIPTION "GameStream host for Moonlight")  # must be <= 35 characters
+set(PROJECT_BRIEF_DESCRIPTION "Desktop stream host for Moonlight")  # must be <= 35 characters
 
-set(PROJECT_LONG_DESCRIPTION "Offering low latency, cloud gaming server capabilities with support for AMD, Intel, \
-and Nvidia GPUs for hardware encoding. Software encoding is also available. You can connect to Sunshine from any \
-Moonlight client on a variety of devices. A web UI is provided to allow configuration, and client pairing, from \
-your favorite web browser. Pair from the local server or any mobile device.")
+set(PROJECT_LONG_DESCRIPTION "Offering remote desktop streaming with support for AMD, Intel, and Nvidia GPUs for \
+hardware encoding. Software encoding is also available. You can connect from Moonlight clients on a variety of \
+devices. A web UI is provided for configuration and client pairing from your web browser.")
 
 if(NOT CMAKE_BUILD_TYPE AND NOT CMAKE_CONFIGURATION_TYPES)
     message(STATUS "Setting build type to 'Release' as none was specified.")

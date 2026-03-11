@@ -87,7 +87,7 @@ namespace system_tray {
   void update_tray_stopped(std::string app_name);
 
   /**
-   * @brief Spawns a notification for PIN Pairing. Clicking it opens the PIN Web UI Page
+   * @brief Spawns a notification for PIN pairing.
    */
   void update_tray_require_pin();
 

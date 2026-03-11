@@ -12,7 +12,7 @@
 
 | Previous                              |                          Next |
 |:--------------------------------------|------------------------------:|
-| [Getting Started](getting_started.md) | [Docker](../DOCKER_README.md) |
+| [Getting Started](getting_started.md) | [Configuration](configuration.md) |
 
 </div>
 

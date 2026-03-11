@@ -42,12 +42,12 @@
   #include <tray/src/tray.h>
 
   // local includes
-  #include "confighttp.h"
   #include "display_device.h"
   #include "logging.h"
   #include "platform/common.h"
   #include "process.h"
-  #include "src/entry_handler.h"
+
+  #define WEB_DIR SUNSHINE_ASSETS_DIR "/web/"
 
 using namespace std::literals;
 
@@ -56,8 +56,7 @@ namespace system_tray {
   static std::atomic tray_initialized = false;
 
   void tray_open_ui_cb([[maybe_unused]] struct tray_menu *item) {
-    BOOST_LOG(info) << "Opening UI from system tray"sv;
-    launch_ui();
+    BOOST_LOG(info) << "Web UI has been removed; use terminal commands for Sunshine administration"sv;
   }
 
   void tray_donate_github_cb([[maybe_unused]] struct tray_menu *item) {
@@ -362,7 +361,7 @@ namespace system_tray {
     tray.notification_icon = TRAY_ICON_LOCKED;
     tray.tooltip = PROJECT_NAME;
     tray.notification_cb = []() {
-      launch_ui("/pin");
+      BOOST_LOG(info) << "Pairing requires terminal PIN entry when running without the Web UI"sv;
     };
     tray_update(&tray);
   }

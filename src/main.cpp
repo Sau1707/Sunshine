@@ -14,7 +14,6 @@
 #endif
 
 // local includes
-#include "confighttp.h"
 #include "display_device.h"
 #include "entry_handler.h"
 #include "globals.h"
@@ -49,6 +48,9 @@ void on_signal(int sig, FN &&fn) {
 std::map<std::string_view, std::function<int(const char *name, int argc, char **argv)>> cmd_to_func {
   {"creds"sv, [](const char *name, int argc, char **argv) {
      return args::creds(name, argc, argv);
+   }},
+  {"set"sv, [](const char *name, int argc, char **argv) {
+     return args::set(name, argc, argv);
    }},
   {"help"sv, [](const char *name, int argc, char **argv) {
      return args::help(name);
@@ -312,7 +314,9 @@ int main(int argc, char *argv[]) {
 
     // Break out of the main loop
     shutdown_event->raise(true);
-    system_tray::end_tray();
+    if constexpr (tray_is_enabled) {
+      system_tray::end_tray();
+    }
 
     display_device_deinit_guard = nullptr;
   });
@@ -329,7 +333,9 @@ int main(int argc, char *argv[]) {
 
     // Break out of the main loop
     shutdown_event->raise(true);
-    system_tray::end_tray();
+    if constexpr (tray_is_enabled) {
+      system_tray::end_tray();
+    }
 
     display_device_deinit_guard = nullptr;
   });
@@ -357,8 +363,12 @@ int main(int argc, char *argv[]) {
   reed_solomon_init();
   auto input_deinit_guard = input::init();
 
-  if (input::probe_gamepads()) {
-    BOOST_LOG(warning) << "No gamepad input is available"sv;
+  if (config::input.controller) {
+    if (input::probe_gamepads()) {
+      BOOST_LOG(warning) << "No gamepad input is available"sv;
+    }
+  } else {
+    BOOST_LOG(info) << "Gamepad input is disabled; keyboard and mouse input only"sv;
   }
 
   if (video::probe_encoders()) {
@@ -392,16 +402,7 @@ int main(int argc, char *argv[]) {
   }
 
   std::thread httpThread {nvhttp::start};
-  std::thread configThread {confighttp::start};
   std::thread rtspThread {rtsp_stream::start};
-
-#ifdef _WIN32
-  // If we're using the default port and GameStream is enabled, warn the user
-  if (config::sunshine.port == 47989 && is_gamestream_enabled()) {
-    BOOST_LOG(fatal) << "GameStream is still enabled in GeForce Experience! This *will* cause streaming problems with Sunshine!"sv;
-    BOOST_LOG(fatal) << "Disable GameStream on the SHIELD tab in GeForce Experience or change the Port setting on the Advanced tab in the Sunshine Web UI."sv;
-  }
-#endif
 
   if (tray_is_enabled && config::sunshine.system_tray) {
     BOOST_LOG(info) << "Starting system tray"sv;
@@ -420,7 +421,6 @@ int main(int argc, char *argv[]) {
   mainThreadLoop(shutdown_event);
 
   httpThread.join();
-  configThread.join();
   rtspThread.join();
 
   task_pool.stop();

@@ -9,46 +9,6 @@
   <Navbar></Navbar>
   <div class="container">
     <h1 class="my-4">{{ $t('troubleshooting.troubleshooting') }}</h1>
-    <!-- ViGEmBus Installation -->
-    <div class="card my-4" v-if="platform === 'windows' && controllerEnabled">
-      <div class="card-body">
-        <h2 id="vigembus">{{ $t('troubleshooting.vigembus_install') }}</h2>
-        <p style="white-space: pre-line">{{ $t('troubleshooting.vigembus_desc') }}</p>
-        <div v-if="vigembus.installed && vigembus.version">
-          <p><strong>{{ $t('troubleshooting.vigembus_current_version') }}:</strong> {{ vigembus.version }}</p>
-          <div class="alert alert-success" v-if="vigembus.version_compatible">
-            <check-circle :size="18" class="icon"></check-circle>
-            {{ $t('troubleshooting.vigembus_compatible') }}
-          </div>
-          <div class="alert alert-danger" v-if="!vigembus.version_compatible">
-            <alert-circle :size="18" class="icon"></alert-circle>
-            {{ $t('troubleshooting.vigembus_incompatible') }}
-          </div>
-        </div>
-        <div class="alert alert-warning" v-else-if="!vigembus.installed">
-          <alert-triangle :size="18" class="icon"></alert-triangle>
-          {{ $t('troubleshooting.vigembus_not_installed') }}
-        </div>
-        <div class="alert alert-success" v-if="vigemBusInstallStatus === true">
-          <check-circle :size="18" class="icon"></check-circle>
-          {{ $t('troubleshooting.vigembus_install_success') }}
-        </div>
-        <div class="alert alert-danger" v-if="vigemBusInstallStatus === false">
-          <alert-circle :size="18" class="icon"></alert-circle>
-          {{ vigemBusInstallError || $t('troubleshooting.vigembus_install_error') }}
-        </div>
-        <div>
-          <button
-            :class="vigembus.installed && vigembus.version === vigembus.packaged_version ? 'btn btn-danger' : 'btn btn-primary'"
-            :disabled="vigemBusInstallPressed"
-            @click="installViGEmBus">
-            <download :size="18" class="icon" v-if="!(vigembus.installed && vigembus.version === vigembus.packaged_version)"></download>
-            <refresh-cw :size="18" class="icon" v-else></refresh-cw>
-            {{ vigembus.installed && vigembus.version === vigembus.packaged_version ? $t('troubleshooting.vigembus_force_reinstall_button', { version: vigembus.packaged_version }) : $t('troubleshooting.vigembus_install_button', { version: vigembus.packaged_version }) }}
-          </button>
-        </div>
-      </div>
-    </div>
     <!-- Force Close App -->
     <div class="card my-4">
       <div class="card-body">
@@ -195,7 +155,6 @@
     import Navbar from './Navbar.vue'
     import {
       AlertCircle,
-      AlertTriangle,
       Check,
       CheckCircle,
       ChevronDown,
@@ -203,7 +162,6 @@
       ChevronsDown,
       ChevronsUp,
       Copy,
-      Download,
       RefreshCw,
       RotateCcw,
       Search,
@@ -215,7 +173,6 @@
       components: {
         Navbar,
         AlertCircle,
-        AlertTriangle,
         Check,
         CheckCircle,
         ChevronDown,
@@ -223,7 +180,6 @@
         ChevronsDown,
         ChevronsUp,
         Copy,
-        Download,
         RefreshCw,
         RotateCcw,
         Search,
@@ -244,18 +200,8 @@
           restartPressed: false,
           showApplyMessage: false,
           platform: "",
-          controllerEnabled: false,
           unpairAllPressed: false,
           unpairAllStatus: null,
-          vigembus: {
-            installed: false,
-            version: '',
-            version_compatible: false,
-            packaged_version: '',
-          },
-          vigemBusInstallPressed: false,
-          vigemBusInstallStatus: null,
-          vigemBusInstallError: null,
           currentLogIndex: -1,
           logLines: [],
         };
@@ -384,11 +330,6 @@
           .then((r) => r.json())
           .then((r) => {
             this.platform = r.platform;
-            this.controllerEnabled = r.controller !== "disabled";
-            // Fetch ViGEmBus status only on Windows when gamepad is enabled
-            if (this.platform === 'windows' && this.controllerEnabled) {
-              this.refreshViGEmBusStatus();
-            }
           });
 
         this.logInterval = setInterval(() => {
@@ -515,55 +456,6 @@
               setTimeout(() => {
                 this.ddResetStatus = null;
               }, 5000);
-            });
-        },
-        refreshViGEmBusStatus() {
-          fetch("/api/vigembus/status")
-            .then((r) => r.json())
-            .then((r) => {
-              this.vigembus = {
-                installed: r.installed || false,
-                version: r.version || '',
-                version_compatible: r.version_compatible || false,
-                packaged_version: r.packaged_version,
-              };
-            })
-            .catch((err) => {
-              console.error("Failed to fetch ViGEmBus status:", err);
-            });
-        },
-        installViGEmBus() {
-          this.vigemBusInstallPressed = true;
-          this.vigemBusInstallStatus = null;
-          this.vigemBusInstallError = null;
-          fetch("/api/vigembus/install", {
-            method: "POST",
-            headers: {
-              "Content-Type": "application/json"
-            }
-          })
-            .then((r) => r.json())
-            .then((r) => {
-              this.vigemBusInstallPressed = false;
-              this.vigemBusInstallStatus = r.status;
-              if (!r.status && r.error) {
-                this.vigemBusInstallError = r.error;
-              }
-              setTimeout(() => {
-                this.vigemBusInstallStatus = null;
-                this.vigemBusInstallError = null;
-              }, 10000);
-              // Refresh status after installation attempt
-              this.refreshViGEmBusStatus();
-            })
-            .catch((err) => {
-              this.vigemBusInstallPressed = false;
-              this.vigemBusInstallStatus = false;
-              this.vigemBusInstallError = err.message;
-              setTimeout(() => {
-                this.vigemBusInstallStatus = null;
-                this.vigemBusInstallError = null;
-              }, 10000);
             });
         },
         navigateToLog(direction) {

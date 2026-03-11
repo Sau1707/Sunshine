@@ -79,13 +79,6 @@
         :platform="platform">
       </network>
 
-      <!-- Files Tab -->
-      <files
-        v-if="currentTab === 'files'"
-        :config="config"
-        :platform="platform">
-      </files>
-
       <!-- Advanced Tab -->
       <advanced
         v-if="currentTab === 'advanced'"
@@ -128,17 +121,14 @@
   import General from './configs/tabs/General.vue'
   import Inputs from './configs/tabs/Inputs.vue'
   import Network from './configs/tabs/Network.vue'
-  import Files from './configs/tabs/Files.vue'
   import Advanced from './configs/tabs/Advanced.vue'
   import AudioVideo from './configs/tabs/AudioVideo.vue'
   import ContainerEncoders from './configs/tabs/ContainerEncoders.vue'
-  import {$tp, usePlatformI18n} from './platform-i18n'
   import {
     Check,
     Cpu,
-    FileCog,
-    Gamepad2,
     Gpu,
+    Keyboard,
     Network as NetworkIcon,
     Save,
     Search,
@@ -153,7 +143,6 @@
       General,
       Inputs,
       Network,
-      Files,
       Advanced,
       // They will be accessible via audio-video, container-encoders only.
       AudioVideo,
@@ -161,9 +150,8 @@
       // icons
       Cpu,
       Check,
-      FileCog,
-      Gamepad2,
       Gpu,
+      Keyboard,
       NetworkIcon,
       Save,
       Search,
@@ -196,13 +184,6 @@
             id: "input",
             name: "Input",
             options: {
-              "controller": "enabled",
-              "gamepad": "auto",
-              "ds4_back_as_touchpad_click": "enabled",
-              "motion_as_ds4": "enabled",
-              "touchpad_as_ds4": "enabled",
-              "ds5_inputtino_randomize_mac": "enabled",
-              "back_button_timeout": -1,
               "keyboard": "enabled",
               "key_repeat_delay": 500,
               "key_repeat_frequency": 24.9,
@@ -221,7 +202,6 @@
               "audio_sink": "",
               "virtual_sink": "",
               "stream_audio": "enabled",
-              "install_steam_audio_drivers": "enabled",
               "adapter_name": "",
               "output_name": "",
               "dd_configuration_option": "disabled",
@@ -229,8 +209,6 @@
               "dd_manual_resolution": "",
               "dd_refresh_rate_option": "auto",
               "dd_manual_refresh_rate": "",
-              "dd_hdr_option": "auto",
-              "dd_wa_hdr_toggle_delay": 0,
               "dd_config_revert_delay": 3000,
               "dd_config_revert_on_disconnect": "disabled",
               "dd_mode_remapping": {"mixed": [], "resolution_only": [], "refresh_rate_only": []},
@@ -255,18 +233,6 @@
             },
           },
           {
-            id: "files",
-            name: "Config Files",
-            options: {
-              "file_apps": "",
-              "credentials_file": "",
-              "log_path": "",
-              "pkey": "",
-              "cert": "",
-              "file_state": "",
-            },
-          },
-          {
             id: "advanced",
             name: "Advanced",
             options: {
@@ -287,8 +253,8 @@
               "nvenc_twopass": "quarter_res",
               "nvenc_spatial_aq": "disabled",
               "nvenc_vbv_increase": 0,
-              "nvenc_realtime_hags": "enabled",
-              "nvenc_latency_over_power": "enabled",
+              "nvenc_realtime_hags": "disabled",
+              "nvenc_latency_over_power": "disabled",
               "nvenc_opengl_vulkan_on_dxgi": "enabled",
               "nvenc_h264_cavlc": "disabled",
             },
@@ -426,10 +392,9 @@
       getTabIcon(tabId) {
         const iconMap = {
           'general': 'Settings',
-          'input': 'Gamepad2',
+          'input': 'Keyboard',
           'av': 'Volume2',
           'network': 'NetworkIcon',
-          'files': 'FileCog',
           'advanced': 'Sliders',
           'nv': 'Gpu',
           'amd': 'Gpu',

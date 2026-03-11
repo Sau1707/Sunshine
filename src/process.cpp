@@ -6,6 +6,7 @@
 
 // standard includes
 #include <filesystem>
+#include <fstream>
 #include <string>
 #include <thread>
 #include <vector>
@@ -15,9 +16,6 @@
 #include <boost/crc.hpp>
 #include <boost/filesystem.hpp>
 #include <boost/program_options/parsers.hpp>
-#include <boost/property_tree/json_parser.hpp>
-#include <boost/property_tree/ptree.hpp>
-#include <boost/token_functions.hpp>
 #include <openssl/evp.h>
 #include <openssl/sha.h>
 
@@ -41,8 +39,6 @@
 
 namespace proc {
   using namespace std::literals;
-  namespace pt = boost::property_tree;
-
   proc_t proc;
 
   class deinit_t: public platf::deinit_t {
@@ -55,6 +51,20 @@ namespace proc {
   std::unique_ptr<platf::deinit_t> init() {
     return std::make_unique<deinit_t>();
   }
+
+  namespace {
+    proc::ctx_t desktop_context() {
+      proc::ctx_t ctx;
+      ctx.name = "Desktop";
+      ctx.image_path = "desktop.png";
+      ctx.id = "1";
+      ctx.elevated = false;
+      ctx.auto_detach = true;
+      ctx.wait_all = true;
+      ctx.exit_timeout = std::chrono::seconds {0};
+      return ctx;
+    }
+  }  // namespace
 
   void terminate_process_group(boost::process::v1::child &proc, boost::process::v1::group &group, std::chrono::seconds exit_timeout) {
     if (group.valid() && platf::process_group_running((std::uintptr_t) group.native_handle())) {
@@ -215,7 +225,7 @@ namespace proc {
       if (ec) {
         BOOST_LOG(error) << "Couldn't run ["sv << cmd.do_cmd << "]: System: "sv << ec.message();
         // We don't want any prep commands failing launch of the desktop.
-        // This is to prevent the issue where users reboot their PC and need to log in with Sunshine.
+        // This is to prevent the issue where users reboot their PC and need to log in remotely.
         // permission_denied is typically returned when the user impersonation fails, which can happen when user is not signed in yet.
         if (!(_app.cmd.empty() && ec == std::errc::permission_denied)) {
           return -1;
@@ -291,7 +301,7 @@ namespace proc {
     } else if (_app.auto_detach && _process.native_exit_code() == 0 &&
                std::chrono::steady_clock::now() - _app_launch_time < 5s) {
       BOOST_LOG(info) << "App exited gracefully within 5 seconds of launch. Treating the app as a detached command."sv;
-      BOOST_LOG(info) << "Adjust this behavior in the Applications tab or apps.json if this is not what you want."sv;
+      BOOST_LOG(info) << "Desktop session switched to detached mode after the launch command exited quickly."sv;
       placebo = true;
       return _app_id;
     }
@@ -618,134 +628,16 @@ namespace proc {
   }
 
   std::optional<proc::proc_t> parse(const std::string &file_name) {
-    pt::ptree tree;
+    (void) file_name;
 
-    try {
-      pt::read_json(file_name, tree);
+    auto this_env = boost::this_process::environment();
+    std::vector<proc::ctx_t> apps;
+    apps.emplace_back(desktop_context());
 
-      auto &apps_node = tree.get_child("apps"s);
-      auto &env_vars = tree.get_child("env"s);
-
-      auto this_env = boost::this_process::environment();
-
-      for (auto &[name, val] : env_vars) {
-        this_env[name] = parse_env_val(this_env, val.get_value<std::string>());
-      }
-
-      std::set<std::string> ids;
-      std::vector<proc::ctx_t> apps;
-      int i = 0;
-      for (auto &[_, app_node] : apps_node) {
-        proc::ctx_t ctx;
-
-        auto prep_nodes_opt = app_node.get_child_optional("prep-cmd"s);
-        auto detached_nodes_opt = app_node.get_child_optional("detached"s);
-        auto exclude_global_prep = app_node.get_optional<bool>("exclude-global-prep-cmd"s);
-        auto output = app_node.get_optional<std::string>("output"s);
-        auto name = parse_env_val(this_env, app_node.get<std::string>("name"s));
-        auto cmd = app_node.get_optional<std::string>("cmd"s);
-        auto image_path = app_node.get_optional<std::string>("image-path"s);
-        auto working_dir = app_node.get_optional<std::string>("working-dir"s);
-        auto elevated = app_node.get_optional<bool>("elevated"s);
-        auto auto_detach = app_node.get_optional<bool>("auto-detach"s);
-        auto wait_all = app_node.get_optional<bool>("wait-all"s);
-        auto exit_timeout = app_node.get_optional<int>("exit-timeout"s);
-
-        std::vector<proc::cmd_t> prep_cmds;
-        if (!exclude_global_prep.value_or(false)) {
-          prep_cmds.reserve(config::sunshine.prep_cmds.size());
-          for (auto &prep_cmd : config::sunshine.prep_cmds) {
-            auto do_cmd = parse_env_val(this_env, prep_cmd.do_cmd);
-            auto undo_cmd = parse_env_val(this_env, prep_cmd.undo_cmd);
-
-            prep_cmds.emplace_back(
-              std::move(do_cmd),
-              std::move(undo_cmd),
-              std::move(prep_cmd.elevated)
-            );
-          }
-        }
-
-        if (prep_nodes_opt) {
-          auto &prep_nodes = *prep_nodes_opt;
-
-          prep_cmds.reserve(prep_cmds.size() + prep_nodes.size());
-          for (auto &[_, prep_node] : prep_nodes) {
-            auto do_cmd = prep_node.get_optional<std::string>("do"s);
-            auto undo_cmd = prep_node.get_optional<std::string>("undo"s);
-            auto elevated = prep_node.get_optional<bool>("elevated");
-
-            prep_cmds.emplace_back(
-              parse_env_val(this_env, do_cmd.value_or("")),
-              parse_env_val(this_env, undo_cmd.value_or("")),
-              std::move(elevated.value_or(false))
-            );
-          }
-        }
-
-        std::vector<std::string> detached;
-        if (detached_nodes_opt) {
-          auto &detached_nodes = *detached_nodes_opt;
-
-          detached.reserve(detached_nodes.size());
-          for (auto &[_, detached_val] : detached_nodes) {
-            detached.emplace_back(parse_env_val(this_env, detached_val.get_value<std::string>()));
-          }
-        }
-
-        if (output) {
-          ctx.output = parse_env_val(this_env, *output);
-        }
-
-        if (cmd) {
-          ctx.cmd = parse_env_val(this_env, *cmd);
-        }
-
-        if (working_dir) {
-          ctx.working_dir = parse_env_val(this_env, *working_dir);
-#ifdef _WIN32
-          // The working directory, unlike the command itself, should not be quoted
-          // when it contains spaces. Unlike POSIX, Windows forbids quotes in paths,
-          // so we can safely strip them all out here to avoid confusing the user.
-          boost::erase_all(ctx.working_dir, "\"");
-#endif
-        }
-
-        if (image_path) {
-          ctx.image_path = parse_env_val(this_env, *image_path);
-        }
-
-        ctx.elevated = elevated.value_or(false);
-        ctx.auto_detach = auto_detach.value_or(true);
-        ctx.wait_all = wait_all.value_or(true);
-        ctx.exit_timeout = std::chrono::seconds {exit_timeout.value_or(5)};
-
-        auto possible_ids = calculate_app_id(name, ctx.image_path, i++);
-        if (ids.count(std::get<0>(possible_ids)) == 0) {
-          // Avoid using index to generate id if possible
-          ctx.id = std::get<0>(possible_ids);
-        } else {
-          // Fallback to include index on collision
-          ctx.id = std::get<1>(possible_ids);
-        }
-        ids.insert(ctx.id);
-
-        ctx.name = std::move(name);
-        ctx.prep_cmds = std::move(prep_cmds);
-        ctx.detached = std::move(detached);
-
-        apps.emplace_back(std::move(ctx));
-      }
-
-      return proc::proc_t {
-        std::move(this_env),
-        std::move(apps)
-      };
-    } catch (std::exception &e) {
-      BOOST_LOG(error) << e.what();
-    }
-
-    return std::nullopt;
+    return proc::proc_t {
+      std::move(this_env),
+      std::move(apps)
+    };
   }
 
   void refresh(const std::string &file_name) {

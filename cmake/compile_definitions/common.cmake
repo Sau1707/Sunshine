@@ -88,8 +88,6 @@ set(SUNSHINE_TARGET_FILES
         "${CMAKE_SOURCE_DIR}/src/nvhttp.h"
         "${CMAKE_SOURCE_DIR}/src/httpcommon.cpp"
         "${CMAKE_SOURCE_DIR}/src/httpcommon.h"
-        "${CMAKE_SOURCE_DIR}/src/confighttp.cpp"
-        "${CMAKE_SOURCE_DIR}/src/confighttp.h"
         "${CMAKE_SOURCE_DIR}/src/rtsp.cpp"
         "${CMAKE_SOURCE_DIR}/src/rtsp.h"
         "${CMAKE_SOURCE_DIR}/src/stream.cpp"
@@ -149,7 +147,6 @@ include_directories(
 )
 
 list(APPEND SUNSHINE_EXTERNAL_LIBRARIES
-        ${MINIUPNP_LIBRARIES}
         ${CMAKE_THREAD_LIBS_INIT}
         enet
         libdisplaydevice::display_device

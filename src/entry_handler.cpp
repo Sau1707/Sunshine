@@ -4,18 +4,19 @@
  */
 // standard includes
 #include <csignal>
+#include <filesystem>
 #include <format>
+#include <fstream>
 #include <iostream>
 #include <thread>
 
 // local includes
 #include "config.h"
-#include "confighttp.h"
 #include "entry_handler.h"
+#include "file_handler.h"
 #include "globals.h"
 #include "httpcommon.h"
 #include "logging.h"
-#include "network.h"
 #include "platform/common.h"
 
 extern "C" {
@@ -26,14 +27,6 @@ extern "C" {
 
 using namespace std::literals;
 
-void launch_ui(const std::optional<std::string> &path) {
-  std::string url = std::format("https://localhost:{}", static_cast<int>(net::map_port(confighttp::PORT_HTTPS)));
-  if (path) {
-    url += *path;
-  }
-  platf::open_url(url);
-}
-
 namespace args {
   int creds(const char *name, int argc, char *argv[]) {
     if (argc < 2 || argv[0] == "help"sv || argv[1] == "help"sv) {
@@ -42,6 +35,38 @@ namespace args {
 
     http::save_user_creds(config::sunshine.credentials_file, argv[0], argv[1]);
 
+    return 0;
+  }
+
+  int set(const char *name, int argc, char *argv[]) {
+    if (argc < 1 || argv[0] == "help"sv) {
+      help(name);
+    }
+
+    file_handler::make_directory(std::filesystem::path(config::sunshine.config_file).parent_path().string());
+    if (!std::filesystem::exists(config::sunshine.config_file)) {
+      std::ofstream {config::sunshine.config_file};
+    }
+
+    auto vars = config::parse_config(file_handler::read_file(config::sunshine.config_file.c_str()));
+    for (int i = 0; i < argc; ++i) {
+      auto parsed = config::parse_config(std::string(argv[i]) + '\n');
+      if (parsed.empty()) {
+        BOOST_LOG(fatal) << "Invalid configuration override: "sv << argv[i];
+        return 1;
+      }
+
+      for (auto &[key, value] : parsed) {
+        vars.insert_or_assign(std::move(key), std::move(value));
+      }
+    }
+
+    if (config::save_config(config::sunshine.config_file, vars)) {
+      BOOST_LOG(fatal) << "Failed to write config file: "sv << config::sunshine.config_file;
+      return 1;
+    }
+
+    BOOST_LOG(info) << "Saved configuration updates to "sv << config::sunshine.config_file;
     return 0;
   }
 
@@ -231,50 +256,5 @@ namespace service_ctrl {
     return true;
   }
 
-  bool wait_for_ui_ready() {
-    std::cout << "Waiting for Web UI to be ready...";
-
-    // Wait up to 30 seconds for the web UI to start
-    for (int i = 0; i < 30; i++) {
-      PMIB_TCPTABLE tcp_table = nullptr;
-      ULONG table_size = 0;
-      ULONG err;
-
-      auto fg = util::fail_guard([&tcp_table]() {
-        free(tcp_table);
-      });
-
-      do {
-        // Query all open TCP sockets to look for our web UI port
-        err = GetTcpTable(tcp_table, &table_size, false);
-        if (err == ERROR_INSUFFICIENT_BUFFER) {
-          free(tcp_table);
-          tcp_table = (PMIB_TCPTABLE) malloc(table_size);
-        }
-      } while (err == ERROR_INSUFFICIENT_BUFFER);
-
-      if (err != NO_ERROR) {
-        BOOST_LOG(error) << "Failed to query TCP table: "sv << err;
-        return false;
-      }
-
-      uint16_t port_nbo = htons(net::map_port(confighttp::PORT_HTTPS));
-      for (DWORD i = 0; i < tcp_table->dwNumEntries; i++) {
-        auto &entry = tcp_table->table[i];
-
-        // Look for our port in the listening state
-        if (entry.dwLocalPort == port_nbo && entry.dwState == MIB_TCP_STATE_LISTEN) {
-          std::cout << std::endl;
-          return true;
-        }
-      }
-
-      Sleep(1000);
-      std::cout << '.';
-    }
-
-    std::cout << "timed out"sv << std::endl;
-    return false;
-  }
 }  // namespace service_ctrl
 #endif

@@ -29,10 +29,6 @@ foreach(asset ${ALL_ASSETS})  # Copy assets to build directory, excluding the we
             DESTINATION "${CMAKE_CURRENT_BINARY_DIR}/assets")
 endforeach()
 
-# install built vite assets
-install(DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}/assets/web"
-        DESTINATION "${SUNSHINE_ASSETS_DIR}")
-
 # platform specific packaging
 if(WIN32)
     include(${CMAKE_MODULE_PATH}/packaging/windows.cmake)

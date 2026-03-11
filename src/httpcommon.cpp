@@ -5,7 +5,10 @@
 #define BOOST_BIND_GLOBAL_PLACEHOLDERS
 
 // standard includes
+#include <cctype>
 #include <filesystem>
+#include <iomanip>
+#include <sstream>
 #include <utility>
 
 // lib includes
@@ -14,7 +17,6 @@
 #include <boost/property_tree/json_parser.hpp>
 #include <boost/property_tree/ptree.hpp>
 #include <boost/property_tree/xml_parser.hpp>
-#include <curl/curl.h>
 #include <Simple-Web-Server/server_http.hpp>
 #include <Simple-Web-Server/server_https.hpp>
 
@@ -41,11 +43,8 @@ namespace http {
   bool user_creds_exist(const std::string &file);
 
   std::string unique_id;
-  net::net_e origin_web_ui_allowed;
-
   int init() {
     bool clean_slate = config::sunshine.flags[config::flag::FRESH_STATE];
-    origin_web_ui_allowed = net::from_enum_string(config::nvhttp.origin_web_ui_allowed);
 
     if (clean_slate) {
       unique_id = uuid_util::uuid_t::generate().string();
@@ -59,7 +58,7 @@ namespace http {
       return -1;
     }
     if (!user_creds_exist(config::sunshine.credentials_file)) {
-      BOOST_LOG(info) << "Open the Web UI to set your new username and password and getting started";
+      BOOST_LOG(warning) << "No admin credentials found. Use `sunshine --creds <username> <password>` to create them.";
     } else if (reload_user_creds(config::sunshine.credentials_file)) {
       return -1;
     }
@@ -177,59 +176,38 @@ namespace http {
   }
 
   bool download_file(const std::string &url, const std::string &file, long ssl_version) {
-    // sonar complains about weak ssl and tls versions; however sonar cannot detect the fix
-    CURL *curl = curl_easy_init();  // NOSONAR
-    if (!curl) {
-      BOOST_LOG(error) << "Couldn't create CURL instance";
-      return false;
-    }
-
-    if (std::string file_dir = file_handler::get_parent_directory(file); !file_handler::make_directory(file_dir)) {
-      BOOST_LOG(error) << "Couldn't create directory ["sv << file_dir << ']';
-      curl_easy_cleanup(curl);
-      return false;
-    }
-
-    FILE *fp = fopen(file.c_str(), "wb");
-    if (!fp) {
-      BOOST_LOG(error) << "Couldn't open ["sv << file << ']';
-      curl_easy_cleanup(curl);
-      return false;
-    }
-
-    curl_easy_setopt(curl, CURLOPT_SSLVERSION, ssl_version);  // NOSONAR
-    curl_easy_setopt(curl, CURLOPT_URL, url.c_str());
-    curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, fwrite);
-    curl_easy_setopt(curl, CURLOPT_WRITEDATA, fp);
-
-    CURLcode result = curl_easy_perform(curl);
-    if (result != CURLE_OK) {
-      BOOST_LOG(error) << "Couldn't download ["sv << url << ", code:" << result << ']';
-    }
-
-    curl_easy_cleanup(curl);
-    fclose(fp);
-    return result == CURLE_OK;
+    (void) ssl_version;
+    BOOST_LOG(error) << "HTTP downloads are disabled in desktop-only builds: ["sv << url << "] -> ["sv << file << ']';
+    return false;
   }
 
   std::string url_escape(const std::string &url) {
-    char *string = curl_easy_escape(nullptr, url.c_str(), static_cast<int>(url.length()));
-    std::string result(string);
-    curl_free(string);
-    return result;
+    std::ostringstream escaped;
+    escaped << std::uppercase << std::hex;
+
+    for (const unsigned char ch : url) {
+      if (std::isalnum(ch) || ch == '-' || ch == '_' || ch == '.' || ch == '~') {
+        escaped << static_cast<char>(ch);
+      } else {
+        escaped << '%' << std::setw(2) << std::setfill('0') << static_cast<int>(ch);
+      }
+    }
+
+    return escaped.str();
   }
 
   std::string url_get_host(const std::string &url) {
-    CURLU *curlu = curl_url();
-    curl_url_set(curlu, CURLUPART_URL, url.c_str(), static_cast<unsigned int>(url.length()));
-    char *host;
-    if (curl_url_get(curlu, CURLUPART_HOST, &host, 0) != CURLUE_OK) {
-      curl_url_cleanup(curlu);
-      return "";
+    const auto scheme_pos = url.find("://");
+    const auto host_start = scheme_pos == std::string::npos ? 0 : scheme_pos + 3;
+    if (host_start >= url.size()) {
+      return {};
     }
-    std::string result(host);
-    curl_free(host);
-    curl_url_cleanup(curlu);
-    return result;
+
+    auto host_end = url.find_first_of("/:?#", host_start);
+    if (host_end == std::string::npos) {
+      host_end = url.size();
+    }
+
+    return url.substr(host_start, host_end - host_start);
   }
 }  // namespace http

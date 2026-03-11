@@ -7,16 +7,15 @@ set(SUNSHINE_PUBLISHER_ISSUE_URL "https://app.lizardbyte.dev/support"
         CACHE STRING "The URL of the publisher's support site or issue tracker.
         If you provide a modified version of Sunshine, we kindly request that you use your own url.")
 
-option(BUILD_DOCS "Build documentation" ON)
-option(BUILD_TESTS "Build tests" ON)
-option(NPM_OFFLINE "Use offline npm packages. You must ensure packages are in your npm cache." OFF)
+option(BUILD_DOCS "Build documentation" OFF)
+option(BUILD_TESTS "Build tests" OFF)
 
 option(BUILD_WERROR "Enable -Werror flag." OFF)
 
 # if this option is set, the build will exit after configuring special package configuration files
 option(SUNSHINE_CONFIGURE_ONLY "Configure special files only, then exit." OFF)
 
-option(SUNSHINE_ENABLE_TRAY "Enable system tray icon." ON)
+option(SUNSHINE_ENABLE_TRAY "Enable system tray icon." OFF)
 
 option(SUNSHINE_SYSTEM_WAYLAND_PROTOCOLS "Use system installation of wayland-protocols rather than the submodule." OFF)
 
@@ -53,15 +52,15 @@ elseif(UNIX)  # Linux
 
     # Linux capture methods
     option(SUNSHINE_ENABLE_CUDA
-            "Enable cuda specific code." ON)
+            "Enable cuda specific code." OFF)
     option(SUNSHINE_ENABLE_DRM
-            "Enable KMS grab if available." ON)
+            "Enable KMS grab if available." OFF)
     option(SUNSHINE_ENABLE_VAAPI
             "Enable building vaapi specific code." ON)
     option(SUNSHINE_ENABLE_WAYLAND
-            "Enable building wayland specific code." ON)
+            "Enable building wayland specific code." OFF)
     option(SUNSHINE_ENABLE_X11
             "Enable X11 grab if available." ON)
     option(SUNSHINE_ENABLE_PORTAL
-            "Enable XDG portal grab if available" ON)
+            "Enable XDG portal grab if available" OFF)
 endif()

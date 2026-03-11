@@ -6,19 +6,6 @@
     {
       "name": "Desktop",
       "image-path": "desktop.png"
-    },
-    {
-      "name": "Steam Big Picture",
-      "detached": [
-        "open steam://open/bigpicture"
-      ],
-      "prep-cmd": [
-        {
-          "do": "",
-          "undo": "open steam://close/bigpicture"
-        }
-      ],
-      "image-path": "steam.png"
     }
   ]
 }

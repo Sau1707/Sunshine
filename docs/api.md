@@ -1,108 +1,46 @@
 # API
 
-Sunshine has a RESTful API which can be used to interact with the service.
+Sunshine exposes a small administrative API for the web UI and automation.
 
-Unless otherwise specified, authentication is required for all API calls. You can authenticate using
-basic authentication with the admin username and password.
+## Authentication
 
-## CSRF Protection
+Use the admin username and password configured in the web UI. Browser-based state-changing requests also require the
+CSRF token flow used by the web UI.
 
-State-changing API endpoints (POST, DELETE) are protected against Cross-Site Request Forgery (CSRF) attacks.
+## Active Endpoints
 
-**For Web Browsers:**
-- Requests from same-origin (configured via `csrf_allowed_origins`) are automatically allowed
-- Cross-origin requests require a CSRF token
+### Session and Pairing
 
-**For Non-Browser Applications:**
-- Non-browser clients (e.g. `curl`, scripts, custom apps) are **exempt** from CSRF protection
-- CSRF attacks require a browser to silently attach credentials to a cross-origin request — this threat
-  does not apply to non-browser clients that explicitly provide credentials with every request
-- Requests with no `Origin` or `Referer` header (as is typical for non-browser clients) are automatically
-  allowed without a CSRF token
+- `GET /api/csrf-token`
+- `POST /api/pin`
+- `POST /api/apps/close`
 
-**Example (browser-equivalent cross-origin request):**
-```bash
-# Get CSRF token
-curl -u user:pass https://localhost:47990/api/csrf-token
+`/api/apps/close` remains as a compatibility-oriented stop-session endpoint even though app management itself has been
+removed from the product surface.
 
-# Use token in request
-curl -u user:pass -H "X-CSRF-Token: your_token_here" \
-  -X POST https://localhost:47990/api/restart
-```
+### Clients
 
-@htmlonly
-<script src="api.js"></script>
-@endhtmlonly
+- `GET /api/clients/list`
+- `POST /api/clients/unpair`
+- `POST /api/clients/unpair-all`
 
-## GET /api/csrf-token
-@copydoc confighttp::getCSRFToken()
+### Configuration
 
-## GET /api/apps
-@copydoc confighttp::getApps()
+- `GET /api/config`
+- `POST /api/config`
+- `POST /api/password`
 
-## POST /api/apps
-@copydoc confighttp::saveApp()
+### Diagnostics and Host Control
 
-## POST /api/apps/close
-@copydoc confighttp::closeApp()
+- `GET /api/logs`
+- `POST /api/reset-display-device-persistence`
+- `POST /api/restart`
 
-## DELETE /api/apps/{index}
-@copydoc confighttp::deleteApp()
+## Removed API Surface
 
-## GET /api/clients/list
-@copydoc confighttp::getClients()
+The desktop-only refactor removed the active routing surface for:
 
-## POST /api/clients/unpair
-@copydoc confighttp::unpair()
-
-## POST /api/clients/unpair-all
-@copydoc confighttp::unpairAll()
-
-## GET /api/config
-@copydoc confighttp::getConfig()
-
-## GET /api/configLocale
-@copydoc confighttp::getLocale()
-
-## POST /api/config
-@copydoc confighttp::saveConfig()
-
-## GET /api/covers/{index}
-@copydoc confighttp::getCover()
-
-## POST /api/covers/upload
-@copydoc confighttp::uploadCover()
-
-## GET /api/logs
-@copydoc confighttp::getLogs()
-
-## POST /api/password
-@copydoc confighttp::savePassword()
-
-## POST /api/pin
-@copydoc confighttp::savePin()
-
-## POST /api/reset-display-device-persistence
-@copydoc confighttp::resetDisplayDevicePersistence()
-
-## POST /api/restart
-@copydoc confighttp::restart()
-
-## GET /api/vigembus/status
-@copydoc confighttp::getViGEmBusStatus()
-
-## POST /api/vigembus/install
-@copydoc confighttp::installViGEmBus()
-
-<div class="section_buttons">
-
-| Previous                                    |                                  Next |
-|:--------------------------------------------|--------------------------------------:|
-| [Performance Tuning](performance_tuning.md) | [Troubleshooting](troubleshooting.md) |
-
-</div>
-
-<details style="display: none;">
-  <summary></summary>
-  [TOC]
-</details>
+- app catalog management
+- cover upload and retrieval
+- featured app flows
+- ViGEmBus installation and status endpoints

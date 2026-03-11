@@ -23,18 +23,6 @@
             </a>
           </li>
           <li class="nav-item">
-            <a class="nav-link" href="./apps">
-              <Layers :size="18" class="icon"></Layers>
-              {{ $t('navbar.applications') }}
-            </a>
-          </li>
-          <li class="nav-item">
-            <a class="nav-link" href="./featured">
-              <Star :size="18" class="icon"></Star>
-              {{ $t('navbar.featured') }}
-            </a>
-          </li>
-          <li class="nav-item">
             <a class="nav-link" href="./config">
               <Settings :size="18" class="icon"></Settings>
               {{ $t('navbar.configuration') }}
@@ -62,7 +50,7 @@
 </template>
 
 <script>
-import { Home, Lock, Layers, Star, Settings, Shield, Info } from 'lucide-vue-next'
+import { Home, Lock, Settings, Shield, Info } from 'lucide-vue-next'
 import ThemeToggle from './ThemeToggle.vue'
 
 export default {
@@ -70,8 +58,6 @@ export default {
     ThemeToggle,
     Home,
     Lock,
-    Layers,
-    Star,
     Settings,
     Shield,
     Info

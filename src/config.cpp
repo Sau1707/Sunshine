@@ -448,9 +448,9 @@ namespace config {
     },  // software
 
     {},  // nv
-    true,  // nv_realtime_hags
+    false,  // nv_realtime_hags
     true,  // nv_opengl_vulkan_on_dxgi
-    true,  // nv_sunshine_high_power_mode
+    false,  // nv_sunshine_high_power_mode
     {},  // nv_legacy
 
     {
@@ -492,12 +492,12 @@ namespace config {
     {},  // output_name
 
     {
-      video_t::dd_t::config_option_e::disabled,  // configuration_option
+      video_t::dd_t::config_option_e::ensure_active,  // configuration_option
       video_t::dd_t::resolution_option_e::automatic,  // resolution_option
       {},  // manual_resolution
       video_t::dd_t::refresh_rate_option_e::automatic,  // refresh_rate_option
       {},  // manual_refresh_rate
-      video_t::dd_t::hdr_option_e::automatic,  // hdr_option
+      video_t::dd_t::hdr_option_e::disabled,  // hdr_option
       3s,  // config_revert_delay
       {},  // config_revert_on_disconnect
       {},  // mode_remapping
@@ -512,7 +512,7 @@ namespace config {
     {},  // audio_sink
     {},  // virtual_sink
     true,  // stream audio
-    true,  // install_steam_drivers
+    false,  // install_steam_drivers
   };
 
   stream_t stream {
@@ -527,8 +527,6 @@ namespace config {
   };
 
   nvhttp_t nvhttp {
-    "lan",  // origin web manager
-
     PRIVATE_KEY_FILE,
     CERTIFICATE_FILE,
 
@@ -558,7 +556,7 @@ namespace config {
 
     true,  // keyboard enabled
     true,  // mouse enabled
-    true,  // controller enabled
+    false,  // controller enabled
     true,  // always send scancodes
     true,  // high resolution scrolling
     true,  // native pen/touch support
@@ -1184,26 +1182,6 @@ namespace config {
     bool_f(vars, "stream_audio", audio.stream);
     bool_f(vars, "install_steam_audio_drivers", audio.install_steam_drivers);
 
-    string_restricted_f(vars, "origin_web_ui_allowed", nvhttp.origin_web_ui_allowed, {"pc"sv, "lan"sv, "wan"sv});
-
-    // Parse CSRF allowed origins - always include defaults, then append user-configured origins
-    std::vector<std::string> user_csrf_origins;
-    string_list_f(vars, "csrf_allowed_origins", user_csrf_origins);
-
-    // Start with default localhost variants
-    sunshine.csrf_allowed_origins = {
-      "https://localhost",
-      "https://127.0.0.1",
-      "https://[::1]"
-    };
-
-    // Append user-configured origins
-    sunshine.csrf_allowed_origins.insert(
-      sunshine.csrf_allowed_origins.end(),
-      user_csrf_origins.begin(),
-      user_csrf_origins.end()
-    );
-
     int to = -1;
     int_between_f(vars, "ping_timeout", to, {-1, std::numeric_limits<int>::max()});
     if (to != -1) {
@@ -1281,13 +1259,6 @@ namespace config {
     int_between_f(vars, "port"s, port, {1024 + nvhttp::PORT_HTTPS, 65535 - rtsp_stream::RTSP_SETUP_PORT});
     sunshine.port = (std::uint16_t) port;
 
-    // Now that we have the port, add web UI port-specific origins to CSRF allowed list
-    // Web UI runs on port + 1 (PORT_HTTPS offset is 1 for confighttp)
-    const unsigned short web_ui_port = sunshine.port + 1;
-    sunshine.csrf_allowed_origins.push_back(std::format("https://localhost:{}", web_ui_port));
-    sunshine.csrf_allowed_origins.push_back(std::format("https://127.0.0.1:{}", web_ui_port));
-    sunshine.csrf_allowed_origins.push_back(std::format("https://[::1]:{}", web_ui_port));
-
     string_restricted_f(vars, "address_family", sunshine.address_family, {"ipv4"sv, "both"sv});
     string_f(vars, "bind_address", sunshine.bind_address);
 
@@ -1298,30 +1269,7 @@ namespace config {
       config::sunshine.flags[config::flag::UPNP].flip();
     }
 
-    string_restricted_f(vars, "locale", config::sunshine.locale, {
-                                                                   "bg"sv,  // Bulgarian
-                                                                   "cs"sv,  // Czech
-                                                                   "de"sv,  // German
-                                                                   "en"sv,  // English
-                                                                   "en_GB"sv,  // English (UK)
-                                                                   "en_US"sv,  // English (US)
-                                                                   "es"sv,  // Spanish
-                                                                   "fr"sv,  // French
-                                                                   "hu"sv,  // Hungarian
-                                                                   "it"sv,  // Italian
-                                                                   "ja"sv,  // Japanese
-                                                                   "ko"sv,  // Korean
-                                                                   "pl"sv,  // Polish
-                                                                   "pt"sv,  // Portuguese
-                                                                   "pt_BR"sv,  // Portuguese (Brazilian)
-                                                                   "ru"sv,  // Russian
-                                                                   "sv"sv,  // Swedish
-                                                                   "tr"sv,  // Turkish
-                                                                   "uk"sv,  // Ukrainian
-                                                                   "vi"sv,  // Vietnamese
-                                                                   "zh"sv,  // Chinese
-                                                                   "zh_TW"sv,  // Chinese (Traditional)
-                                                                 });
+    string_restricted_f(vars, "locale", config::sunshine.locale, {"en"sv});
 
     std::string log_level_string;
     string_f(vars, "min_log_level", log_level_string);
@@ -1370,6 +1318,9 @@ namespace config {
     bool shortcut_launch = false;
     bool service_admin_launch = false;
 #endif
+    const auto is_admin_command = [](const std::string &cmd_name) {
+      return cmd_name == "creds"sv || cmd_name == "set"sv || cmd_name == "help"sv || cmd_name == "version"sv;
+    };
 
     for (auto x = 1; x < argc; ++x) {
       auto line = argv[x];
@@ -1432,17 +1383,23 @@ namespace config {
         std::ofstream {sunshine.config_file};
       }
 
-      // Read config file
       auto vars = parse_config(file_handler::read_file(sunshine.config_file.c_str()));
 
-      for (auto &[name, value] : cmd_vars) {
-        vars.insert_or_assign(std::move(name), std::move(value));
-      }
+      if (is_admin_command(sunshine.cmd.name)) {
+        path_f(vars, "file_state", nvhttp.file_state);
+        sunshine.credentials_file = nvhttp.file_state;
+        path_f(vars, "credentials_file", sunshine.credentials_file);
+        path_f(vars, "log_path", sunshine.log_file);
+      } else {
+        for (auto &[name, value] : cmd_vars) {
+          vars.insert_or_assign(std::move(name), std::move(value));
+        }
 
-      // Apply the config. Note: This will try to create any paths
-      // referenced in the config, so we may receive exceptions if
-      // the path is incorrect or inaccessible.
-      apply_config(std::move(vars));
+        // Apply the config. Note: This will try to create any paths
+        // referenced in the config, so we may receive exceptions if
+        // the path is incorrect or inaccessible.
+        apply_config(std::move(vars));
+      }
       config_loaded = true;
     } catch (const std::filesystem::filesystem_error &err) {
       BOOST_LOG(fatal) << "Failed to apply config: "sv << err.what();
@@ -1499,17 +1456,39 @@ namespace config {
         WaitForSingleObject(shell_exec_info.hProcess, INFINITE);
         CloseHandle(shell_exec_info.hProcess);
 
-        // Wait for the UI to be ready for connections
-        service_ctrl::wait_for_ui_ready();
       }
-
-      // Launch the web UI
-      launch_ui();
+      std::cout << "Sunshine service is running. Use terminal commands for configuration and pairing." << std::endl;
 
       // Always return 1 to ensure Sunshine doesn't start normally
       return 1;
     }
 #endif
+
+    return 0;
+  }
+
+  int save_config(const std::string &file_path, const std::unordered_map<std::string, std::string> &vars) {
+    std::vector<std::pair<std::string, std::string>> entries;
+    entries.reserve(vars.size());
+    for (const auto &[name, value] : vars) {
+      entries.emplace_back(name, value);
+    }
+
+    std::sort(entries.begin(), entries.end(), [](const auto &lhs, const auto &rhs) {
+      return lhs.first < rhs.first;
+    });
+
+    std::ofstream out(file_path, std::ios::trunc);
+    if (!out.is_open()) {
+      return -1;
+    }
+
+    for (const auto &[name, value] : entries) {
+      out << name << " = " << value;
+      if (value.empty() || value.back() != '\n') {
+        out << '\n';
+      }
+    }
 
     return 0;
   }

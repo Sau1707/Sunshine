@@ -5,10 +5,10 @@
 // lib includes
 #include <inputtino/input.hpp>
 #include <libevdev/libevdev.h>
+#include <string_view>
 
 // local includes
 #include "inputtino_common.h"
-#include "inputtino_gamepad.h"
 #include "inputtino_keyboard.h"
 #include "inputtino_mouse.h"
 #include "inputtino_pen.h"
@@ -20,6 +20,18 @@
 using namespace std::literals;
 
 namespace platf {
+  namespace {
+    std::vector<supported_gamepad_t> &disabled_gamepads() {
+      static std::vector<supported_gamepad_t> gamepads {
+        supported_gamepad_t {"disabled", false, "Controller support has been removed from this build"}
+      };
+      return gamepads;
+    }
+
+    void log_gamepad_disabled(std::string_view operation) {
+      BOOST_LOG(debug) << operation << " ignored because controller support is disabled";
+    }
+  }  // namespace
 
   input_t input() {
     return {new input_raw_t()};
@@ -80,44 +92,49 @@ namespace platf {
   }
 
   int alloc_gamepad(input_t &input, const gamepad_id_t &id, const gamepad_arrival_t &metadata, feedback_queue_t feedback_queue) {
-    auto raw = (input_raw_t *) input.get();
-    return platf::gamepad::alloc(raw, id, metadata, feedback_queue);
+    (void) input;
+    (void) id;
+    (void) metadata;
+    (void) feedback_queue;
+    log_gamepad_disabled("alloc_gamepad"sv);
+    return -1;
   }
 
   void free_gamepad(input_t &input, int nr) {
-    auto raw = (input_raw_t *) input.get();
-    platf::gamepad::free(raw, nr);
+    (void) input;
+    (void) nr;
+    log_gamepad_disabled("free_gamepad"sv);
   }
 
   void gamepad_update(input_t &input, int nr, const gamepad_state_t &gamepad_state) {
-    auto raw = (input_raw_t *) input.get();
-    platf::gamepad::update(raw, nr, gamepad_state);
+    (void) input;
+    (void) nr;
+    (void) gamepad_state;
+    log_gamepad_disabled("gamepad_update"sv);
   }
 
   void gamepad_touch(input_t &input, const gamepad_touch_t &touch) {
-    auto raw = (input_raw_t *) input.get();
-    platf::gamepad::touch(raw, touch);
+    (void) input;
+    (void) touch;
+    log_gamepad_disabled("gamepad_touch"sv);
   }
 
   void gamepad_motion(input_t &input, const gamepad_motion_t &motion) {
-    auto raw = (input_raw_t *) input.get();
-    platf::gamepad::motion(raw, motion);
+    (void) input;
+    (void) motion;
+    log_gamepad_disabled("gamepad_motion"sv);
   }
 
   void gamepad_battery(input_t &input, const gamepad_battery_t &battery) {
-    auto raw = (input_raw_t *) input.get();
-    platf::gamepad::battery(raw, battery);
+    (void) input;
+    (void) battery;
+    log_gamepad_disabled("gamepad_battery"sv);
   }
 
   platform_caps::caps_t get_capabilities() {
     platform_caps::caps_t caps = 0;
     // TODO: if has_uinput
     caps |= platform_caps::pen_touch;
-
-    // We support controller touchpad input only when emulating the PS5 controller
-    if (config::input.gamepad == "ds5"sv || config::input.gamepad == "auto"sv) {
-      caps |= platform_caps::controller_touch;
-    }
 
     return caps;
   }
@@ -128,6 +145,7 @@ namespace platf {
   }
 
   std::vector<supported_gamepad_t> &supported_gamepads(input_t *input) {
-    return platf::gamepad::supported_gamepads(input);
+    (void) input;
+    return disabled_gamepads();
   }
 }  // namespace platf

@@ -168,10 +168,6 @@ namespace config {
   };
 
   struct nvhttp_t {
-    // Could be any of the following values:
-    // pc|lan|wan
-    std::string origin_web_ui_allowed;
-
     std::string pkey;
     std::string cert;
 
@@ -259,10 +255,6 @@ namespace config {
     bool notify_pre_releases;
     bool system_tray;
     std::vector<prep_cmd_t> prep_cmds;
-
-    // List of allowed origins for CSRF protection (e.g., "https://example.com,https://app.example.com")
-    // Comma-separated list of additional origins. Default includes localhost variants and web UI port.
-    std::vector<std::string> csrf_allowed_origins;
   };
 
   extern video_t video;
@@ -274,4 +266,5 @@ namespace config {
 
   int parse(int argc, char *argv[]);
   std::unordered_map<std::string, std::string> parse_config(const std::string_view &file_content);
+  int save_config(const std::string &file_path, const std::unordered_map<std::string, std::string> &vars);
 }  // namespace config

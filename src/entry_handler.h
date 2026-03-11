@@ -13,16 +13,6 @@
 #include "thread_safe.h"
 
 /**
- * @brief Launch the Web UI.
- * @param path Optional path to append to the base URL.
- * @examples
- * launch_ui();
- * launch_ui("/pin");
- * @examples_end
- */
-void launch_ui(const std::optional<std::string> &path = std::nullopt);
-
-/**
  * @brief Functions for handling command line arguments.
  */
 namespace args {
@@ -36,6 +26,14 @@ namespace args {
    * @examples_end
    */
   int creds(const char *name, int argc, char *argv[]);
+
+  /**
+   * @brief Persist configuration options to the config file.
+   * @param name The name of the program.
+   * @param argc The number of arguments.
+   * @param argv The arguments.
+   */
+  int set(const char *name, int argc, char *argv[]);
 
   /**
    * @brief Print help to stdout, then exit.
@@ -125,12 +123,5 @@ namespace service_ctrl {
    */
   bool start_service();
 
-  /**
-   * @brief Wait for the UI to be ready after Sunshine startup.
-   * @examples
-   * wait_for_ui_ready();
-   * @examples_end
-   */
-  bool wait_for_ui_ready();
 }  // namespace service_ctrl
 #endif
