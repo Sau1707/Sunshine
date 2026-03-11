@@ -48,25 +48,6 @@ function detect_nvcc_path() {
   return 1
 }
 
-# Reusable function to setup NVM environment
-function setup_nvm_environment() {
-  # Only setup NVM if it should be used for this distro
-  if [[ "$nvm_node" == 1 ]]; then
-    # Check if NVM is installed and source it
-    if [[ -f "$HOME/.nvm/nvm.sh" ]]; then
-      # shellcheck source=/dev/null
-      source "$HOME/.nvm/nvm.sh"
-      # Use the default node version installed by NVM
-      nvm use default 2>/dev/null || nvm use node 2>/dev/null || true
-      echo "Using NVM Node.js version: $(node --version 2>/dev/null || echo 'not available')"
-      echo "Using NVM npm version: $(npm --version 2>/dev/null || echo 'not available')"
-    else
-      echo "NVM not found, using system Node.js if available"
-    fi
-  fi
-  return 0
-}
-
 function _usage() {
   local exit_code=$1
 
@@ -520,18 +501,6 @@ function run_step_deps() {
     fi
   fi
 
-  # install node from nvm
-  if [[ "$nvm_node" == 1 ]]; then
-    nvm_url="https://raw.githubusercontent.com/nvm-sh/nvm/master/install.sh"
-    echo "nvm url: ${nvm_url}"
-    wget -qO- ${nvm_url} | bash
-
-    # shellcheck source=/dev/null  # we don't care that shellcheck cannot find nvm.sh
-    source "$HOME/.nvm/nvm.sh"
-    nvm install node
-    nvm use node
-  fi
-
   # run the cuda install
   if [[ "$skip_cuda" == 0 ]]; then
     install_cuda
@@ -541,9 +510,6 @@ function run_step_deps() {
 
 function run_step_cmake() {
   echo "Running step: CMake configure"
-
-  # Setup NVM environment if needed (for web UI builds)
-  setup_nvm_environment
 
   # Detect CUDA path using the reusable function
   nvcc_path=""
@@ -626,9 +592,6 @@ function run_step_validation() {
 function run_step_build() {
   echo "Running step: Build"
 
-  # Setup NVM environment if needed (for web UI builds)
-  setup_nvm_environment
-
   # Build the project
   ninja -C "build"
   return 0
@@ -703,7 +666,6 @@ if grep -q "Arch Linux" /etc/os-release; then
   version=""
   package_update_command="${sudo_cmd} pacman -Syu --noconfirm"
   package_install_command="${sudo_cmd} pacman -Sy --needed"
-  nvm_node=0
   gcc_version="14"
 elif grep -q "Debian GNU/Linux 12 (bookworm)" /etc/os-release; then
   distro="debian"
@@ -713,7 +675,6 @@ elif grep -q "Debian GNU/Linux 12 (bookworm)" /etc/os-release; then
   cuda_version="12.9.1"
   cuda_build="575.57.08"
   gcc_version="13"
-  nvm_node=0
 elif grep -q "Debian GNU/Linux 13 (trixie)" /etc/os-release; then
   distro="debian"
   version="13"
@@ -722,7 +683,6 @@ elif grep -q "Debian GNU/Linux 13 (trixie)" /etc/os-release; then
   cuda_version="12.9.1"
   cuda_build="575.57.08"
   gcc_version="14"
-  nvm_node=0
 elif grep -q "PLATFORM_ID=\"platform:f42\"" /etc/os-release; then
   distro="fedora"
   version="42"
@@ -731,7 +691,6 @@ elif grep -q "PLATFORM_ID=\"platform:f42\"" /etc/os-release; then
   cuda_version="12.9.1"
   cuda_build="575.57.08"
   gcc_version="14"
-  nvm_node=0
 elif grep -q '^ID=fedora$' /etc/os-release && grep -q '^VERSION_ID=43$' /etc/os-release; then
   distro="fedora"
   version="43"
@@ -740,7 +699,6 @@ elif grep -q '^ID=fedora$' /etc/os-release && grep -q '^VERSION_ID=43$' /etc/os-
   cuda_version="12.9.1"
   cuda_build="575.57.08"
   gcc_version="14"
-  nvm_node=0
 elif grep -q '^ID=fedora$' /etc/os-release && grep -q '^VERSION_ID=44$' /etc/os-release; then
   distro="fedora"
   version="44"
@@ -749,7 +707,6 @@ elif grep -q '^ID=fedora$' /etc/os-release && grep -q '^VERSION_ID=44$' /etc/os-
   cuda_version="12.9.1"
   cuda_build="575.57.08"
   gcc_version="14"
-  nvm_node=0
 elif grep -q '^ID=fedora$' /etc/os-release && grep -q '^VERSION_ID=45$' /etc/os-release; then
   distro="fedora"
   version="45"
@@ -758,7 +715,6 @@ elif grep -q '^ID=fedora$' /etc/os-release && grep -q '^VERSION_ID=45$' /etc/os-
   cuda_version="13.1.1"
   cuda_build="590.48.01"
   gcc_version="15"
-  nvm_node=0
 elif grep -q "Ubuntu 22.04" /etc/os-release; then
   distro="ubuntu"
   version="22.04"
@@ -767,7 +723,6 @@ elif grep -q "Ubuntu 22.04" /etc/os-release; then
   cuda_version="12.9.1"
   cuda_build="575.57.08"
   gcc_version="13"
-  nvm_node=1
 elif grep -q "Ubuntu 24.04" /etc/os-release; then
   distro="ubuntu"
   version="24.04"
@@ -776,7 +731,6 @@ elif grep -q "Ubuntu 24.04" /etc/os-release; then
   cuda_version="12.9.1"
   cuda_build="575.57.08"
   gcc_version="14"
-  nvm_node=1
 elif grep -q "Ubuntu 25.04" /etc/os-release; then
   distro="ubuntu"
   version="25.04"
@@ -785,7 +739,6 @@ elif grep -q "Ubuntu 25.04" /etc/os-release; then
   cuda_version="12.9.1"
   cuda_build="575.57.08"
   gcc_version="14"
-  nvm_node=0
 elif grep -q "Ubuntu 25.10" /etc/os-release; then
   distro="ubuntu"
   version="25.10"
@@ -794,7 +747,6 @@ elif grep -q "Ubuntu 25.10" /etc/os-release; then
   cuda_version="12.9.1"
   cuda_build="575.57.08"
   gcc_version="14"
-  nvm_node=0
 else
   echo "Unsupported Distro or Version"
   exit 1

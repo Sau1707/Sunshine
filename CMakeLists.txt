@@ -16,7 +16,7 @@ set(PROJECT_BRIEF_DESCRIPTION "Desktop stream host for Moonlight")  # must be <=
 
 set(PROJECT_LONG_DESCRIPTION "Offering remote desktop streaming with support for AMD, Intel, and Nvidia GPUs for \
 hardware encoding. Software encoding is also available. You can connect from Moonlight clients on a variety of \
-devices. A web UI is provided for configuration and client pairing from your web browser.")
+devices. Configuration and pairing are handled from the terminal.")
 
 if(NOT CMAKE_BUILD_TYPE AND NOT CMAKE_CONFIGURATION_TYPES)
     message(STATUS "Setting build type to 'Release' as none was specified.")

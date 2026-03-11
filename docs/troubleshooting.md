@@ -44,7 +44,7 @@ If Moonlight cannot pair:
 - verify Sunshine is running
 - confirm the client can reach the host
 - check logs for certificate or credential setup problems
-- retry from the pairing page in the web UI
+- retry pairing from the terminal with `sunshine -0`
 
 ## Not Supported
 
@@ -54,4 +54,4 @@ These are no longer supported troubleshooting targets for the main product flow:
 - featured apps
 - cover art downloads
 - controller or gamepad emulation
-- ViGEmBus setup through the web UI
+- setup flows are terminal-only; use Sunshine command line commands instead

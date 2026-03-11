@@ -93,7 +93,7 @@ set(CPACK_COMPONENT_AUTOSTART_GROUP "Core")
 
 # assets
 set(CPACK_COMPONENT_ASSETS_DISPLAY_NAME "Required Assets")
-set(CPACK_COMPONENT_ASSETS_DESCRIPTION "Shaders, default box art, and web UI.")
+set(CPACK_COMPONENT_ASSETS_DESCRIPTION "Shaders, icons, and default runtime assets.")
 set(CPACK_COMPONENT_ASSETS_GROUP "Core")
 set(CPACK_COMPONENT_ASSETS_REQUIRED true)
 

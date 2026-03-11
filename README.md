@@ -55,6 +55,6 @@ cmake --build build -j2
 
 - [Getting Started](docs/getting_started.md)
 - [Configuration](docs/configuration.md)
-- [API](docs/api.md)
+- [Command Line](docs/api.md)
 - [Building](docs/building.md)
 - [Troubleshooting](docs/troubleshooting.md)

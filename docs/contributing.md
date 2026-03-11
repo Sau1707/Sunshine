@@ -19,7 +19,7 @@ scope:
 
 The following are no longer part of the intended product direction:
 
-- browser-based configuration UI
+- terminal-driven configuration workflows
 - app launching and app catalogs
 - featured apps
 - controller or gamepad setup flows

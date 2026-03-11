@@ -106,15 +106,10 @@ add_executable(${PROJECT_NAME}
         ${TEST_SOURCES}
         ${SUNSHINE_SOURCES})
 
-# Copy files needed for config consistency tests to build directory
-# This ensures both CLI and CLion can access the same files relative to the test executable
-# Using configure_file ensures files are copied when they change between builds
+# Copy files needed for integration tests to build directory.
 set(INTEGRATION_TEST_FILES
     "src/config.cpp"
-    "src_assets/common/assets/web/config.html"
     "docs/configuration.md"
-    "src_assets/common/assets/web/public/assets/locale/en.json"
-    "src_assets/common/assets/web/configs/tabs/General.vue"
     "src_assets/linux/misc/60-sunshine.rules"
 )
 

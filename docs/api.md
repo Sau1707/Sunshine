@@ -1,46 +1,18 @@
-# API
+# Command Line
 
-Sunshine exposes a small administrative API for the web UI and automation.
+Sunshine administration is terminal-driven.
 
-## Authentication
+## Supported Commands
 
-Use the admin username and password configured in the web UI. Browser-based state-changing requests also require the
-CSRF token flow used by the web UI.
+- `sunshine --creds <username> <password>`
+- `sunshine --set key=value [key=value ...]`
+- `sunshine --help`
+- `sunshine --version`
+- `sunshine -0`
 
-## Active Endpoints
+## Notes
 
-### Session and Pairing
-
-- `GET /api/csrf-token`
-- `POST /api/pin`
-- `POST /api/apps/close`
-
-`/api/apps/close` remains as a compatibility-oriented stop-session endpoint even though app management itself has been
-removed from the product surface.
-
-### Clients
-
-- `GET /api/clients/list`
-- `POST /api/clients/unpair`
-- `POST /api/clients/unpair-all`
-
-### Configuration
-
-- `GET /api/config`
-- `POST /api/config`
-- `POST /api/password`
-
-### Diagnostics and Host Control
-
-- `GET /api/logs`
-- `POST /api/reset-display-device-persistence`
-- `POST /api/restart`
-
-## Removed API Surface
-
-The desktop-only refactor removed the active routing surface for:
-
-- app catalog management
-- cover upload and retrieval
-- featured app flows
-- ViGEmBus installation and status endpoints
+- `--creds` writes persistent admin credentials to the configured credentials file.
+- `--set` persists configuration overrides directly into the config file.
+- `-0` reads the Moonlight pairing PIN from stdin.
+- Relative and absolute config file paths are still supported as the positional file argument.

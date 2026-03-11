@@ -194,12 +194,11 @@ namespace platf {
   class vigem_t {
   public:
     int init() {
-      // Probe ViGEm during startup to see if we can successfully attach gamepads. This will allow us to
-      // immediately display the error message in the web UI even before the user tries to stream.
+      // Probe ViGEm during startup so failures are logged before the first stream attempt.
       client_t client {vigem_alloc()};
       VIGEM_ERROR status = vigem_connect(client.get());
       if (!VIGEM_SUCCESS(status)) {
-        // Log a special fatal message for this case to show the error in the web UI
+        // Log a fatal message so the failure is visible in logs immediately.
         BOOST_LOG(fatal) << "ViGEmBus is not installed or running. You must install ViGEmBus for gamepad support!"sv;
       } else {
         vigem_disconnect(client.get());

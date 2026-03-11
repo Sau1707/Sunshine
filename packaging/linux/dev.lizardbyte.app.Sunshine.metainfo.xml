@@ -32,7 +32,7 @@
     <p>
       <code>flatpak run --command=additional-install.sh @PROJECT_FQDN@</code>
     </p>
-    <p>NOTE: Sunshine uses a self-signed certificate. The web browser will report it as not secure, but it is safe.</p>
+    <p>NOTE: Sunshine uses self-signed TLS material for host pairing and streaming.</p>
   </description>
 
   <releases>
