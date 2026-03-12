@@ -114,6 +114,10 @@ set(INTEGRATION_TEST_FILES
 )
 
 foreach(file ${INTEGRATION_TEST_FILES})
+    cmake_path(GET file PARENT_PATH file_parent)
+    if(file_parent)
+        file(MAKE_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}/${file_parent}")
+    endif()
     configure_file(
         "${CMAKE_SOURCE_DIR}/${file}"
         "${CMAKE_CURRENT_BINARY_DIR}/${file}"
